@@ -15,6 +15,7 @@ Output style:
 """
 
 import json
+import yaml
 import sys
 import argparse
 from typing import Any, TextIO
@@ -111,13 +112,12 @@ def format_json(data: Any, indent_str: str = "  ") -> str:
     lines = format_value(data, 0, indent_str)
     return "\n".join(lines)
 
-
-def process_input(input_stream: TextIO, indent_str: str = "  ") -> str:
-    """Read JSON from input stream and return formatted output."""
-    content = input_stream.read()
-    data = json.loads(content)
-    return format_json(data, indent_str)
-
+def process(inp, out, allow_yaml):
+    if allow_yaml:
+        data = yaml.safe_load(inp)
+    else:
+        data = json.load(inp)
+    print(format_json(data, "  "), file=out)
 
 def main():
     parser = argparse.ArgumentParser(
@@ -129,7 +129,6 @@ Examples:
   %(prog)s input.json                # Read file, write to stdout
   %(prog)s -i input.json             # Format file in-place
   %(prog)s -i *.json                 # Format multiple files in-place
-  %(prog)s --indent 4 input.json     # Use 4-space indentation
 """
     )
     parser.add_argument(
@@ -143,10 +142,9 @@ Examples:
         help="Edit file(s) in place."
     )
     parser.add_argument(
-        "--indent",
-        type=int,
-        default=2,
-        help="Number of spaces for indentation (default: 2)"
+        "--yaml",
+        action="store_true",
+        help="Allow inputting YAML (to be destructively reinterpreted as JSON)"
     )
     parser.add_argument(
         "-o", "--output",
@@ -154,42 +152,38 @@ Examples:
     )
     
     args = parser.parse_args()
-    indent_str = " " * args.indent
-    
+
     if args.in_place and args.output:
         parser.error("Cannot use both -i/--in-place and -o/--output")
-    
-    if args.in_place and not args.files:
-        parser.error("-i/--in-place requires at least one file argument")
     
     if args.output and len(args.files) > 1:
         parser.error("-o/--output can only be used with a single input file")
     
     try:
         if not args.files:
-            result = process_input(sys.stdin, indent_str)
-            print(result)
-        elif args.in_place:
-            for filepath in args.files:
-                with open(filepath, "r", encoding="utf-8") as f:
-                    content = f.read()
-                data = json.loads(content)
-                result = format_json(data, indent_str)
-                with open(filepath, "w", encoding="utf-8") as f:
-                    f.write(result)
-                    f.write("\n")
-                print(f"Formatted: {filepath}", file=sys.stderr)
-        elif args.output:
+            process(sys.stdin, sys.stdout, args.yaml)
+            return
+        if args.output:
             with open(args.files[0], "r", encoding="utf-8") as f:
-                result = process_input(f, indent_str)
-            with open(args.output, "w", encoding="utf-8") as f:
-                f.write(result)
-                f.write("\n")
-        else:
-            for filepath in args.files:
+                with open(args.output, "w", encoding="utf-8") as o:
+                    process(f, o, args.yaml)
+            print(f"Formatted {args.files[0]} to {args.output}", file=sys.stderr)
+            return
+        for filepath in args.files:
+            if args.in_place:
+                outfilepath = filepath + ".formatted" + random.randint(0, 1000000)
+                try:
+                    with open(filepath, "r", encoding="utf-8") as f:
+                        with open(outfilepath, "w", encoding="utf-8") as o:
+                            process(f, o, args.yaml)
+                except:
+                    os.remove(outfilepath)
+                    raise
+                os.rename(outfilepath, filepath)
+                print(f"Formatted {filepath} in-place", file=sys.stderr)
+            else:
                 with open(filepath, "r", encoding="utf-8") as f:
-                    result = process_input(f, indent_str)
-                print(result)
+                    process(f, sys.stdout, process.yaml)
     except json.JSONDecodeError as e:
         print(f"Error: Invalid JSON - {e}", file=sys.stderr)
         sys.exit(1)
