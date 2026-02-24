@@ -177,7 +177,13 @@ Examples:
                 with open(filepath, "r", encoding="utf-8") as f:
                     text = f.read()
                 with open(filepath, "w", encoding="utf-8") as o:
-                    process(io.StringIO(text), o, args.yaml)
+                    try:
+                        process(io.StringIO(text), o, args.yaml)
+                    except Exception:
+                        o.seek(0)
+                        o.write(text)
+                        raise
+
                 print(f"Formatted {filepath} in-place", file=sys.stderr)
             else:
                 with open(filepath, "r", encoding="utf-8") as f:
