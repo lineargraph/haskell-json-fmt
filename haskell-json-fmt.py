@@ -15,6 +15,7 @@ Output style:
 """
 
 import random
+import os
 import json
 import yaml
 import sys
@@ -172,7 +173,7 @@ Examples:
             return
         for filepath in args.files:
             if args.in_place:
-                outfilepath = filepath + ".formatted" + random.randint(0, 1000000)
+                outfilepath = filepath + ".formatted" + str(random.randint(0, 1000000))
                 try:
                     with open(filepath, "r", encoding="utf-8") as f:
                         with open(outfilepath, "w", encoding="utf-8") as o:
@@ -192,7 +193,8 @@ Examples:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
     except Exception as e:
-        print(f"Error: {e}", file=sys.stderr)
+        import traceback
+        traceback.print_exc()
         sys.exit(1)
 
 
