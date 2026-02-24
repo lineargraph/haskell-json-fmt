@@ -69,16 +69,15 @@
           pkgs,
           includes ? [ "*.json" ],
           excludes ? [ ],
-          indent ? 2,
+          allowYaml ? false,
         }:
         {
           settings.formatter.haskell-json-fmt = {
             command = "${mkPackage pkgs}/bin/haskell-json-fmt";
             options = [
               "-i"
-              "--indent"
-              (toString indent)
-            ];
+            ]
+            ++ (if allowYaml then [ "--yaml" ] else [ ]);
             inherit includes excludes;
           };
         };
