@@ -14,6 +14,7 @@ Output style:
 }
 """
 
+import io
 import random
 import os
 import json
@@ -173,15 +174,10 @@ Examples:
             return
         for filepath in args.files:
             if args.in_place:
-                outfilepath = filepath + ".formatted" + str(random.randint(0, 1000000))
-                try:
-                    with open(filepath, "r", encoding="utf-8") as f:
-                        with open(outfilepath, "w", encoding="utf-8") as o:
-                            process(f, o, args.yaml)
-                except:
-                    os.remove(outfilepath)
-                    raise
-                os.rename(outfilepath, filepath)
+                with open(filepath, "r", encoding="utf-8") as f:
+                    text = f.read()
+                with open(filepath, "w", encoding="utf-8") as o:
+                    process(io.StringIO(text), o, args.yaml)
                 print(f"Formatted {filepath} in-place", file=sys.stderr)
             else:
                 with open(filepath, "r", encoding="utf-8") as f:
