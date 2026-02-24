@@ -14,6 +14,7 @@ Output style:
 }
 """
 
+import random
 import json
 import yaml
 import sys
