@@ -118,7 +118,7 @@ def process(inp, out, allow_yaml):
         data = yaml.safe_load(inp)
     else:
         data = json.load(inp)
-    print(format_json(data, "  "), file=out)
+    print(format_json(data), file=out)
 
 def main():
     parser = argparse.ArgumentParser(
@@ -184,7 +184,7 @@ Examples:
                 print(f"Formatted {filepath} in-place", file=sys.stderr)
             else:
                 with open(filepath, "r", encoding="utf-8") as f:
-                    process(f, sys.stdout, process.yaml)
+                    process(f, sys.stdout, args.yaml)
     except json.JSONDecodeError as e:
         print(f"Error: Invalid JSON - {e}", file=sys.stderr)
         sys.exit(1)
